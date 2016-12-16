@@ -1,0 +1,20 @@
+{
+
+  "manifest_version": 2,
+  "name": "Window Bookmark",
+  "version": "0.1",
+
+  "description": "Allows the bookmarking of a window and all the tabs in it.",
+
+  "icons": {
+    "48": "icons/border-48.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["*://*.mozilla.org/*"],
+      "js": ["borderify.js"]
+    }
+  ]
+
+}

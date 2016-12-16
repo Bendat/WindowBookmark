@@ -1,0 +1,27 @@
+{
+  "title": "Window Bookmark",
+  "name": "windowbookmark",
+  "version": "0.0.1",
+  "description": "A addon to bookmark a window and all its tabs.",
+  "main": "index.js",
+  "author": "Ben Aherne",
+  "engines": {
+    "firefox": ">=38.0a1",
+    "fennec": ">=38.0a1"
+  },
+  "license": "MIT",
+  "keywords": [
+    "Window",
+    "tabs",
+    "bookmark"
+  ],
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "tsc  && tsc src/data/bookmarkerpanel --outDir data  --target ES6",
+    "test": "npm run build && jpm run -b \"C:/Program Files/MDP/firefox.exe\"",
+    "prsttest": "npm run build && jpm run -b \"C:/Program Files/MDP/firefox.exe\" --profile profs\\Test --no-copy",
+    "testonly": "jpm run -b \"C:/Program Files/MDP/firefox.exe\""
+  }
+}

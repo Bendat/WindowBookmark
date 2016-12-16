@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "outFile": "index.js",
+    "sourceRoot": "./src/",
+    "rootDir": "./src/",
+    "sourceMap": true
+  },
+  "exclude": [
+    "./src/data/**/*"
+  ]
+}
