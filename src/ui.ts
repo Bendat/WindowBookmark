@@ -12,6 +12,7 @@ const {viewFor}  = require("sdk/view/core");
 const windowIds: string[] = [];
 var globalActiveWindow;
 
+
 var button = buttons.ToggleButton({
   id: "winbm",
   label: "bookmark tab",
@@ -76,8 +77,12 @@ myPanel.port.on("deleteBookmark", (title)=>{
     delete storage.bookmarks[title]
 });
 
+/**
+ * Initialize the extension, creating persistent storage.
+ */
 function init(){
     myPanel.port.emit("newWindow", winIdFromTabId(tabs[0].id), tabs[0].window.title);
+    //todo - loop through all currently open windows on start.
     windowIds.push(winIdFromTabId(tabs[0].id));
     if(storage.bookmarks){
         for(let bookmark of Object.keys(storage.bookmarks)){
@@ -90,10 +95,21 @@ function init(){
     myPanel.port.emit("initSettings", storage.settings);    
 }
 
+/**
+ * Gets difference between two arrays.
+ * @param {Object[]} first
+ * @param {Object[]} second
+ * @returns {Object[]} An array containing all elements not common between the parameter arrays.
+ */
 function listDiff(first: any[], second: any[]):any[] {
     return first.filter(function(i) {return second.indexOf(i) < 0;});
 }
 
+/**
+ * Bookmark the provided window.
+ * @param {string} winId - the id of the current window.
+ * @param {string} savename - the name to save the window as in storage. Defaults to 'nameless window'
+ */
 function bookmark(winId: string, savename: string): void{
     savename = isEmptyOrWhitespace(savename) ? "nameless window" : savename;
     const window = getWindowFromId(winIdFromTabId(winId));
@@ -124,12 +140,20 @@ function bookmark(winId: string, savename: string): void{
         myPanel.port.emit("bookmarked", savename);
     }
 }
-
-function storeWindow(bookmarkObject: Object){
+/**
+ * Save the contents of a window in persistent storage.
+ * @param {Object} bookmarkObject - an object containing a collection of tabs and their urls.
+ */
+function storeWindow(bookmarkObject: Object): void{
     if(!storage.bookmarks){storage.bookmarks = {}};
     Object.assign(storage.bookmarks, bookmarkObject);
 }
 
+/**
+ * Gets a window object from it's id.
+ * @param {string} id - the id of the window to find.
+ * @returns {Object} - the window object matching the provided id
+ */
 function getWindowFromId(id: string): any{
     for(let window of windows){
         if(window.tabs[0].id.includes(id)){
@@ -138,7 +162,11 @@ function getWindowFromId(id: string): any{
     }
 }
 
-function openBookmarkedWindow(name: string){
+/**
+ * Opens a bookmarked window, removing it from storage.
+ * @param {string} name - the name of the window in storage.
+ */
+function openBookmarkedWindow(name: string): void{
     var urls = storage.bookmarks[name];
     if(typeof urls !== undefined){
         windows.open({
@@ -171,14 +199,29 @@ function handleHide() {
     button.state('window', {checked: false});
 }
 
+/**
+ * Generates a window id from the open tab.
+ * @param {string} id - The tab id to generate the window id from.
+ * @returns {string} - The generated window id
+ */
 function winIdFromTabId(id: string):string{
     return id.substring(id.indexOf("-"), id.lastIndexOf("-")+1);
 }
 
+/**
+ * Checks if a string contains only whitespace or newlines.
+ * @param {string} str - the string to check.
+ * @returns {boolean} - returns true for an empty string, otherwise false.
+ */
 function isEmptyOrWhitespace(str:string):boolean{
     return str === null || str.match(/^\s*$/) !== null;
 }
 
+/**
+ * Generates a title from the windows id
+ * @param {string} winId - the id of the window to get the title of.
+ * @returns {string} - the title of the window.
+ */
 function titleFromId(winId): string{
     for(let window of windows){
         if(window.tabs[0].id.includes(winId)){

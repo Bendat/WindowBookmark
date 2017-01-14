@@ -36,6 +36,13 @@ slf.port.on("initSettings", (settings)=>{
         (options.persist.parentNode as HTMLElement).style.display = "none";
     }
 });
+
+/**
+ * Updates the title of a window in the ui panel dropdown.
+ * @param {string} id - the id of the window to update.
+ * @param {string} title - the new title of the window.
+ * @param {HTMLElement} parent - the parent node of the list to update.
+ */
 function updateListItem(id:string, title: string, parent: HTMLElement): void{
     const node = document.getElementById(id);
     if(!node){return};
@@ -43,6 +50,12 @@ function updateListItem(id:string, title: string, parent: HTMLElement): void{
     nodeP.innerText = title; 
 }
 
+/**
+ * Adds an item to the list of open or bookmarked windows.
+ * @param {string} id - the id of the window to update in the list.
+ * @param {string} title - the title of the window.
+ * @param {HTMLElement} parent - the parent node of the list to update.
+ */
 function addListItem(id:string, title: string, parent: HTMLElement): void{
     const node = document.createElement("li");
     const nodeP = document.createElement("p");
@@ -65,6 +78,7 @@ function addListItem(id:string, title: string, parent: HTMLElement): void{
     parent.appendChild(node);   
 }
 
+
 function bookmarkClickHandler(e: Event){
     const node = (e.currentTarget as HTMLElement);
     const title = node.getElementsByTagName("p")[0].innerText;
@@ -79,6 +93,10 @@ function windowClickHandler(e: Event){
     formInput.setAttribute("data-window", wndw);
 }; 
 
+/**
+ * Generates a unique id.
+ * @returns {string} - the generated id.
+ */
 function guid() {
   function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
