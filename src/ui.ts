@@ -9,13 +9,14 @@ const pMod       = require('sdk/page-mod').PageMod;
 const storage    = require("sdk/simple-storage").storage;
 const tabs       = require("sdk/tabs");
 const {viewFor}  = require("sdk/view/core");
+const windowIds: string[] = [];
 var globalActiveWindow;
-// windows.on("close")
+
 var button = buttons.ToggleButton({
   id: "winbm",
   label: "bookmark tab",
-  icon: "resource://windowbookmark/data/bookmark.png",
-  onChange: handleChange
+  icon: "resource://windowbookmark/data/logonew.png",
+  onChange: handleChange,
 });
 
 var myPanel = require("sdk/panel").Panel({
@@ -25,88 +26,116 @@ var myPanel = require("sdk/panel").Panel({
     contentURL: data.url("panel.html"),
     contentScriptFile: data.url("bookmarkerpanel.js"),
     onHide: handleHide,
-
 });
 
-myPanel.port.emit("open", tabs[0].id, titleFromId(tabs[0].id));
-
-
-myPanel.port.on("bookmark", bookmark);
-
-myPanel.port.on("openBookmark", (name)=>{
-    openBookmarkedWindow(name);
-});
+init();
 
 windows.on("open", (window)=>{
-    globalActiveWindow = window;
-    myPanel.port.emit("open", tabs[0].id,  window.title);
+    myPanel.port.emit("newWindow", winIdFromTabId(window.tabs[0].id), window.title);
+    windowIds.push(winIdFromTabId(window.tabs[0].id));
 });
 
-windows.on("activate", (window)=>{
-    globalActiveWindow = window;
-});
-
-windows.on('close', function(wndw) {
-  myPanel.port.emit("close", wndw.title);
-});
-
-tabs.on("ready", function(tab) {
-    if(tab.window.tabs.activeTab.id == tab.id){
-        myPanel.port.emit("closetab", [tab.id, tab.id], titleFromId(tab.window.tabs.activeTab.id));
+windows.on("close", (window)=>{
+    const openWindows = [];
+    for(var window of windows){
+        if(window.tabs && window.tabs[0]){
+            openWindows.push(winIdFromTabId(window.tabs[0].id));
+        }
+    }
+    const id = listDiff(windowIds, openWindows)[0];
+    windowIds.splice(windowIds.indexOf(id), 1);
+    if(id){
+        myPanel.port.emit("windowClosed", id);
     }
 });
 
-tabs.on('close', function(tab) {
-    if(tabs[0]){
-        myPanel.port.emit("closetab", [tab.id, tab.window.tabs.activeTab.id], titleFromId(tabs[0].id));
+tabs.on("activate", (tab)=>{
+    myPanel.port.emit("newTab", winIdFromTabId(tab.id), tab.title);
+});
+
+tabs.on("ready", (tab)=>{
+    if(tab.window.tabs.activeTab.id === tab.id){
+        myPanel.port.emit("newTab", winIdFromTabId(tab.id), tab.title);
     }
 });
+myPanel.port.on("updatesetting", (setting)=>{
+    storage.settings[setting] = !storage.settings[setting];
+});
+myPanel.port.on("bookmark", bookmark);
 
-tabs.on("open", (tab)=>{
-    if(tab.window.tabs.length == 1 || tab.window.tabs.length == 2){
-        myPanel.port.emit("update", [tab.window.tabs[0].id,tab.id], titleFromId(tab.id));
+myPanel.port.on("openBookmark", openBookmarkedWindow);
+
+myPanel.port.on("quickmark", ()=>{
+    var winId = winIdFromTabId(windows.activeWindow.tabs[0].id);
+    var saveName = windows.activeWindow.tabs.activeTab.title;
+    bookmark(winId, saveName);
+    myPanel.hide();
+});
+
+myPanel.port.on("deleteBookmark", (title)=>{
+    delete storage.bookmarks[title]
+});
+
+function init(){
+    myPanel.port.emit("newWindow", winIdFromTabId(tabs[0].id), tabs[0].window.title);
+    windowIds.push(winIdFromTabId(tabs[0].id));
+    if(storage.bookmarks){
+        for(let bookmark of Object.keys(storage.bookmarks)){
+            myPanel.port.emit("bookmarked", bookmark);
+        }
     }
-});
+    if(!storage.settings){
+        storage.settings = {autoclose: false, persist: false};
+    }
+    myPanel.port.emit("initSettings", storage.settings);    
+}
 
-tabs.on("deactivate", (tab)=>{
-    var id = tab.id;
-    tabs.on("activate", (newActiveTab)=>{
+function listDiff(first: any[], second: any[]):any[] {
+    return first.filter(function(i) {return second.indexOf(i) < 0;});
+}
 
-        myPanel.port.emit("update", [id, newActiveTab.id], titleFromId(newActiveTab.id));
-    });
-});
-
-
-function bookmark(id:string, savename:string){
+function bookmark(winId: string, savename: string): void{
     savename = isEmptyOrWhitespace(savename) ? "nameless window" : savename;
-    const winTitle = titleFromId(id);
-    console.log(winTitle);
+    const window = getWindowFromId(winIdFromTabId(winId));
     var bookmarkObject = {};
-    var window;
     if(storage.bookmarks && storage.bookmarks[savename]){
         let oldname = savename;
         savename = new Date().toLocaleString() + savename;
         myPanel.port.emit("namexists", oldname, savename)
     }
-    let winCount = 0;
-    for(let wndw of windows){
-        if(wndw.title === winTitle){
-            window = wndw;
-        }
-        winCount++;
-    }
     var urls: string[] = new Array();
-    if(window){    
+    if(window){  
+ 
         for(let tab of window.tabs){
             urls.push(tab.url);
         }
         bookmarkObject[savename] = urls;
         storeWindow(bookmarkObject);
-        if(winCount > 1){
-            window.close();
+        if(storage.settings.autoclose){
+            if(storage.settings.persist){
+                if(windows.length !== 1){
+                    window.close();
+                }
+            }else{
+                window.close();
+            }
+        }
+
+        myPanel.port.emit("bookmarked", savename);
+    }
+}
+
+function storeWindow(bookmarkObject: Object){
+    if(!storage.bookmarks){storage.bookmarks = {}};
+    Object.assign(storage.bookmarks, bookmarkObject);
+}
+
+function getWindowFromId(id: string): any{
+    for(let window of windows){
+        if(window.tabs[0].id.includes(id)){
+            return window;
         }
     }
-
 }
 
 function openBookmarkedWindow(name: string){
@@ -121,7 +150,6 @@ function openBookmarkedWindow(name: string){
                     }
                 }
             },
-
         });
         myPanel.port.emit("removeItems", Object.keys(storage.bookmarks))
         delete storage.bookmarks[name]
@@ -129,28 +157,13 @@ function openBookmarkedWindow(name: string){
     console.log("no urls");
 }
 
-function stripKeyQuotes(entry: string){
-    return entry.substring(0, entry.length);
-}
-
-function keyExists(item: Object, key: string){
-    if(!item){return false};
-    var keys = Object.keys(item);
-    return keys.indexOf(key) >=0 || keys.indexOf("\""+key+"\"") >= 0;
-}
-
-function storeWindow(bookmarkObject: Object){
-    if(!storage.bookmarks || !storage.bookmarks["empty"]){storage.bookmarks = {"empty":"empty"}};
-    console.log(JSON.stringify(bookmarkObject));
-    Object.assign(storage.bookmarks, bookmarkObject);
-    myPanel.port.emit("bookmarked", storage.bookmarks);
-}
-
 function handleChange(state) {
     if (state.checked) {
         myPanel.show({
             position: button
         });
+    }else{
+        myPanel.hide();
     }
 }
 
@@ -158,18 +171,20 @@ function handleHide() {
     button.state('window', {checked: false});
 }
 
-function isEmptyOrWhitespace(str:string){
+function winIdFromTabId(id: string):string{
+    return id.substring(id.indexOf("-"), id.lastIndexOf("-")+1);
+}
+
+function isEmptyOrWhitespace(str:string):boolean{
     return str === null || str.match(/^\s*$/) !== null;
 }
-function titleFromId(winId){
-    var title;
+
+function titleFromId(winId): string{
     for(let window of windows){
-        for(let tb of window.tabs){
-            if(tb.id == winId.replace("window", "")){
-                title = window.title;
-            }
+        if(window.tabs[0].id.includes(winId)){
+            return window.title;
         }
     }
-    return title;
+    return null;
 }
 

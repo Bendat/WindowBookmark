@@ -1,1 +1,10 @@
 src/*
+npm-debug.log.*
+tsconfig.json
+.git
+test
+README.md
+xmanifest.json
+*.xpi
+.jpmignore
+.gitignore

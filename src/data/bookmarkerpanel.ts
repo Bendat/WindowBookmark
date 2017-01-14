@@ -1,102 +1,96 @@
 declare var require: any;
 var slf = self as any; // Workaround for typescript.
 var windows: string[] = new Array();
+const emptyList = document.getElementById("empty");
 const openList = document.getElementById("windows");
-const bookmarkList = document.getElementById("bookmarkWindows");
+const bookmarkList = document.getElementById("bookmarks");
+const options = {autoclose: document.getElementById("closeonsave"), persist: document.getElementById("keepalive")};
 const form: HTMLElement = document.getElementById("nameform");
 const formInput: HTMLInputElement = document.getElementById("nameinput") as HTMLInputElement;
 const formButtons = {ok:document.getElementById("namebutton"), cancel: document.getElementById("cancel")}; 
+const openWindows: HTMLElement[] = [];
+const bookMarkedWindows: HTMLElement[] = [];
+const quickMark: HTMLElement = document.getElementById("quickmark");
 
-slf.port.on("open", (winId, title)=>{
-    windows.push(winId);
-    addListEntry(winId, title);
+slf.port.on("newWindow", (winId, title)=>{
+    addListItem(winId, title, openList)
 });
 
-slf.port.on("close", (wndw)=>{
-    let node = document.getElementById(makeId(wndw.title));
-    let windows = document.getElementsByTagName("li");
-    document.removeChild(node);
-    windows = document.getElementsByTagName("li");
+slf.port.on("newTab", (winId, title)=>{
+    updateListItem(winId, title, openList);
 });
 
-slf.port.on("closetab", (tabArr:string[], title)=>{
-    const oldId = makeId(tabArr[0]);
-    const newId = makeId(tabArr[1]);
-    console.log(newId+" stuff "+title);
-    windows[windows.indexOf[oldId]] = newId;
-    swapId(oldId, newId, title);
+slf.port.on("bookmarked", (name)=>{
+    if(emptyList){emptyList.remove()}
+    addListItem(guid(), name, bookmarkList)
 });
 
-slf.port.on("update", (tabArr:string[], title)=>{
-    console.log(tabArr + title);
-    const oldId = makeId(tabArr[0]);
-    const newId = makeId(tabArr[1]);
-    console.log(newId+" stuff "+title);
-    windows[windows.indexOf[oldId]] = newId;
-    swapId(oldId, newId, title);
+slf.port.on("windowClosed", (id)=>{
+    openList.removeChild(document.getElementById(id));
 });
-
-slf.port.on("nameExists", (oldname, savename)=>{
-    alert("A bookmark called"+ oldname+"already exists, adding a timestamp: "+savename);
-});
-
-slf.port.on("bookmarked", (stored: Object)=>{
-    var keys: string[] = new Array();
-    Object.keys(stored).forEach(key=>{
-        keys.push(stripKeyQuotes(key));
-    });
-    listBookmarks(Object.keys(stored));
-});
-
-slf.port.on("removeItems", removeBookmark);
-
-function removeBookmark(stored: string[]){
-    removeChildren(bookmarkList);
-    listBookmarks(stored);
-}
-
-function removeChildren(node: HTMLElement) {
-    var last;
-    while (last = node.lastChild) {node.removeChild(last)};
-};
-
-function listBookmarks(stored: string[]){
-    var bookMark = stored[stored.length-1];
-    var node = document.createElement("li");
-    node.innerText = bookMark;
-    node.addEventListener("click", bookmarkClickHandler);
-    bookmarkList.appendChild(node);
-}
-
-function stripKeyQuotes(entry: string){
-    return entry.substring(0, entry.length);
-}
-function bookmarkClickHandler(e){
-    const wndw = (e.currentTarget as HTMLElement).innerText;
-    slf.port.emit("openBookmark", wndw);
-}
-function swapId(oldId: string, newId: string, title: string): void{
-    const node = document.getElementById(oldId);
-    if(node != null){
-        node.id = newId;
-        node.innerText =  title;
+slf.port.on("initSettings", (settings)=>{
+    (options.autoclose as HTMLInputElement).checked = settings.autoclose;
+    (options.persist as HTMLInputElement).checked = settings.persist;
+    
+    if(!(options.autoclose as HTMLInputElement).checked){
+        (options.persist.parentNode as HTMLElement).style.display = "none";
     }
+});
+function updateListItem(id:string, title: string, parent: HTMLElement): void{
+    const node = document.getElementById(id);
+    if(!node){return};
+    const nodeP = node.getElementsByTagName("p")[0];
+    nodeP.innerText = title; 
 }
 
-function addListEntry(windId: string, title: string): void{
+function addListItem(id:string, title: string, parent: HTMLElement): void{
     const node = document.createElement("li");
     const nodeP = document.createElement("p");
-    node.id = makeId(windId);
+    if(parent === bookmarkList){
+        const nodeI = document.createElement("img") as HTMLImageElement;
+        nodeI.src = "./close.png";
+        nodeI.className = "exitimg";
+        node.appendChild(nodeI);
+        nodeI.addEventListener("click",(e)=>{
+            e.stopPropagation();
+            const title = nodeP.innerText;
+            bookmarkList.removeChild(document.getElementById(node.id));
+            slf.port.emit("deleteBookmark", title)
+        });
+    }
+    node.id = id;
     nodeP.innerText = title;
-    node.addEventListener("click", windowClickHandler);
+    node.addEventListener("click", parent === openList? windowClickHandler: bookmarkClickHandler);
     node.appendChild(nodeP);
-    openList.appendChild(node);
-};
+    parent.appendChild(node);   
+}
+
+function bookmarkClickHandler(e: Event){
+    const node = (e.currentTarget as HTMLElement);
+    const title = node.getElementsByTagName("p")[0].innerText;
+    slf.port.emit("openBookmark", title);
+    bookmarkList.removeChild(document.getElementById(node.id));
+}
+
+function windowClickHandler(e: Event){
+    toggleForm();
+    const wndw = (e.currentTarget as HTMLElement).id;
+    formInput.value = (e.currentTarget as HTMLElement).getElementsByTagName("p")[0].innerText;
+    formInput.setAttribute("data-window", wndw);
+}; 
+
+function guid() {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return s4() + s4() + '-' + s4() + s4();
+}
 
 function init(){
     formButtons.ok.addEventListener("click", (e)=>{
         let saveName = formInput.value;
-        console.log(formInput.getAttribute("data-window")+saveName);
         slf.port.emit("bookmark", formInput.getAttribute("data-window"), saveName);
         toggleForm();
     });
@@ -104,23 +98,22 @@ function init(){
     formButtons.cancel.addEventListener("click", ()=>{
         toggleForm();
     });
-}
 
-function makeId(windId: string): string{
-    return "window"+windId;
-} ;
+    options.autoclose.addEventListener("click", ()=>{
+        if(!(options.autoclose as HTMLInputElement).checked){
+            (options.persist.parentNode as HTMLElement).style.display = "none";
+        }else{
+            (options.persist.parentNode as HTMLElement).style.display = "inline-block";
+        }
+        slf.port.emit("updatesetting", "autoclose");
+    });
+    options.persist.addEventListener("click", ()=>{
+        slf.port.emit("updatesetting", "persist");
+    });
 
-function windowClickHandler(e: Event){
-    toggleForm();
-    const wndw = getWindowName((e.currentTarget as HTMLElement).id);
-    formInput.value = (e.currentTarget as HTMLElement).getElementsByTagName("p")[0].innerText;
-    formInput.setAttribute("data-window", wndw);
-}; 
-
-function getWindowName(id: string){
-    return windows.filter((wndw)=>{
-        return wndw === id.replace("window", "");
-    })[0]||windows[0];
+    quickMark.addEventListener("click",()=>{
+        slf.port.emit("quickmark");
+    });
 }
 
 function toggleForm(){

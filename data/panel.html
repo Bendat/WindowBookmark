@@ -14,63 +14,63 @@
             }
             h1{
                 color: #2C3E50;
-                font: Helvetica, Open Sans, Segoe UI, sans-serif;
+                font: Helvetica, "Open Sans", "Segoe UI", sans-serif;
                 font-size: 1.1em;
                 text-align: center;
                 border: 1px solid rgba(0,0,0,0.1);
                 padding-top: 0.3em;
                 padding-right: .5em;
                 background: white;
-                width: 100%;
-                
+                width: 100%;        
             }
-
             body>ul{
                 position: relative;
                 z-index: 1;
-                margin-left: .2em;
+                margin-left: -1em;
                 border-top: 1px solid whitesmoke;
-            }
-            ul{
-                padding: 0;
-                margin: 0;
-                margin-left: 10%;
-                width: 100%;
-                height: 100%;
-                display: block;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                color: #2C3E50;
-                background: whitesmoke;
-            }
-            body>ul{
                 display: block;
                 background: white;
                 width: 100%;
                 height: 100%;
-                border-top: 2 pixel inset whitesmoke;
+                margin-top: 0em;
             }
+            ul ul{
+                padding: 0;
+                margin: 0;
+                width: auto;
+                min-height: 0;
+                /*height: auto;*/
+                width: 100%;
+                max-height: 100%;
+                position: relative;
+                display: inline-block;
+                text-overflow: ellipsis;
+                color: #2C3E50;
+                overflow-x: hidden;
+            }
+
             li li{
                 white-space: nowrap;
+                height: auto;
                 max-height: 1.5rem;
                 font-size: .8em;
-                width: auto;
-                border-bottom: 1px dashed whitesmoke;
                 cursor: pointer;
                 border-radius: 1px 0;
-                background: green;
-
-            }
-            li li:hover{
-                max-height: auto;
+                background: whitesmoke;
+                overflow: hidden;
+                display: block;
+                width: 100%;
             }
             li li p{
-                background: blue;
+                margin: 0;
+                padding: 0.1em 0 0.4em 0.1em;
+                display: block;
+                width: 100%;
                 display: block;
             }
-
-            li ul{
-
+            li li:hover{
+                background: #d64933;
+                color: white;
             }
             li h1{
                 cursor: pointer;
@@ -78,31 +78,45 @@
                 display: inline-block;
                 width: auto;
                 padding-top: 25%;
+                min-width: 0;
                 width: auto;
                 padding: 0;
                 margin: 0;
                 text-align: left;
                 font-size: 1rem;
                 border: 0;
+                border-bottom: 1px dashed rgba(0,0,0,.1)
+            }
+            h2{
+                font-size: .8em;
+                color: #2C3E50;
+                padding: 0;
+                margin: 0;
             }
             .winDrop{
                 list-style: none;
                 padding: 0;
                 color:#2b303a;
-                background: white;
-                width: 100%;
-                height: 50%;
+                width: auto;
+                height: 33%;
                 padding: 0;
-                margin: 0;
+                margin: .6em auto auto -0.6em;
             }
             #openWindows{
                 top: 0;
+                max-height: 70%;
             }
             #bookmarkWindows{
                 bottom: 20px;
                 background: whitesmoke;
+                max-height: 80%;
+            }
+            #bookmarks{
+                padding: 0;
+                margin: 0;
             }
             #openWindows, #bookmarkWindows{
+                background: whitesmoke;
                 visibility: hidden;
                 opacity: 0;
                 font-size: 1.1rem;
@@ -111,42 +125,45 @@
                 -moz-transition: opacity 0.3s; 
                 position: fixed;
                 display: block;
-                margin-top:25%;
-                margin-left: 12.5%;
+                padding: 0.1em;
                 border-radius: 1px;
                 z-index:1000;
+                width: 90%;
+                margin-left: -1%;
+                margin-top: 22%;
+                height: auto;
+
                 overflow-x: hidden;
                 overflow-y: auto;
-                width: 75%;
                 -moz-box-shadow: 4px 6px 12px -8px rgba(0,0,0,0.75);
                 box-shadow: 4px 6px 12px -8px rgba(0,0,0,0.75);
-
             }
-            .winDrop:hover h1~#openWindows, .winDrop:hover h1~#bookmarkWindows,
-            #openWindows li:hover, #bookmarkWindows li:hover{
+            .winDrop h1:hover~#openWindows, .winDrop h1:hover~#bookmarkWindows,
+            #openWindows:hover, #bookmarkWindows:hover{
                 visibility: visible;
                 opacity: 1;
                 filter: alpha(opacity=100);
                 transition: opacity 0.3s linear;
                 -moz-transition: opacity 0.3s; 
-                transition-delay:0.3s;
+                transition-delay:0.5s;
             } 
             .winDrop:hover .drop-icon{
                 image-orientation: 0deg;
+                transform: image-orientation .3s linear;
             }
 
             form{
                 margin: 0;
-                width: 100%;
-                height: 50%;
+                width: 99%;
+                height: 80%;
                 position: fixed;
                 z-index: 10;
                 display: block;
-                top: 25%;
+                bottom: 0;
                 margin-left: .2em;
                 background: rgb(250,250,250);
                 border: 1px solid;
-                border-radius: .3rem;
+                border-radius: 1px;
                 display: none;
             }
             input{
@@ -164,6 +181,12 @@
             button{
                 float: right;
                 display: block;
+                background: #d64933;
+                color: white;
+                font-size: 1.1em;
+                border: 0 1px 1px 1px whitesmoke solid;
+                border-radius: 1px;
+                margin-top: .3em;
             }
             .drop-icon{
                 image-orientation: 180deg;
@@ -208,6 +231,9 @@
             .options::first-child{
                 border-left: 1px solid rgba(255,255,255,0.3);
             }
+            .optionsDiv::first-of-type{
+                border-left: 1px dashed rgba(255,255,255,0.3);
+            }
             .optionsDiv{
                 display: inline-block;
                 width: 15%;
@@ -216,6 +242,7 @@
                 -moz-box-shadow: 0px 5px 12px -8px rgba(0,0,0,0.75);
                 box-shadow: 0px 5px 12px -8px rgba(0,0,0,0.75);
                 border-right: 1px inset rgba(255,255,255,0.3);
+
                 text-align: center;
                 margin-right: -.25em;
                 margin-bottom: 1.5em;
@@ -241,36 +268,76 @@
                 border-bottom: 1px solid rgba(255,255,255,.4);
                 overflow: hidden
             }
+            #optionSpan{
+                font-size: .8em;
+                color: white;
+                display: inline-block;
+                vertical-align: top;
+                position: absolute;
+                margin-top: 0.2em;
+                margin-left: -28%;
+            }
+            #empty{
+                color: lightgrey;
+            }
+
+            #owd{
+                max-width: 65%;
+            }
+            #bwd{
+                max-width: 85%;
+            }
+            li li:hover .exitimg{
+                opacity: 0.5;
+            }
+            .exitimg{
+                display: block;
+                position: relative;
+                float: right;
+                height: 12%;
+                width: 12%;
+                background: whitesmoke;
+                opacity: 0;
+            }
+            li li:hover .exitimg:hover{
+                opacity: 1;
+                /*background: #bac1b8;*/
+            }
         </style>
+        
     </head>
     <body>
         <h1 title="test Title">Window Bookmarker</h1>
         <section class="options">
+            <span id="optionSpan">Options: </span>
             <div class="optionsDiv">
-                <input name="closeonsave" type="checkbox" class="checkbox">
+                <input id="closeonsave" name="closeonsave" type="checkbox" class="checkbox">
             </div>
             <p class="tooltip">Automatically close a window that has been bookmarked.</p>
             <div class="optionsDiv">
-                <input name="keepalive" type="checkbox" class="checkbox">
+                <input id="keepalive" name="keepalive" type="checkbox" class="checkbox">
             </div>
-            <p class="tooltip">When bookmarking the last open window, WindowBookmarker will open a new browser on your homepage.</p>
-            <img class="optionsDiv" src="bookmark.png">
+            <p class="tooltip">When autoclose is enabled, this setting prevents WindowBookmarker from fully closing firefox.</p>
+            <img id="quickmark" class="optionsDiv" src="logonew.png">
+            <p class="tooltip">Quickmark: Bookmark this window</p>
+
         </section>
 
         <ul>
-            <li class="winDrop">
+            <li class="winDrop" id="owd">
                 <h1>Open Windows <img class="drop-icon" src="arrow.png"></h1>
                 <div id="openWindows">
-                    <ul id="windows">
-            
+                    <h2>Open Windows</h2>
+                    <ul id="windows">   
                     </ul>
                 </div>
             </li>
-            <li class="winDrop">
+            <li class="winDrop" id="bwd">
                 <h1>Bookmarked Windows <img class="drop-icon" src="arrow.png"></h1>
                 <div id="bookmarkWindows">
+                    <h2>Bookmarked Windows</h2>
                     <ul id="bookmarks">
-            
+                        <li id="empty"><p>No bookmarks yet.</p></li>
                     </ul>      
                 </div>
             </li>
